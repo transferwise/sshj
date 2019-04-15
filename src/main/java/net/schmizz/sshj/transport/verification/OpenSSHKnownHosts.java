@@ -50,7 +50,7 @@ public class OpenSSHKnownHosts
         this.khFile = khFile;
         log = loggerFactory.getLogger(getClass());
         if (khFile.exists()) {
-            final EntryFactory entryFactory = new EntryFactory();
+            final EntryFactory entryFactory = new EntryFactory(loggerFactory);
             final BufferedReader br = new BufferedReader(new FileReader(khFile));
             try {
                 // Read in the file, storing each line as an entry
@@ -189,8 +189,10 @@ public class OpenSSHKnownHosts
      * <p/>
      * Lines starting with `#' and empty lines are ignored as comments.
      */
-    public class EntryFactory {
-        public EntryFactory() {
+    public static class EntryFactory {
+        protected final Logger log;
+        public EntryFactory(LoggerFactory loggerFactory) {
+            log = loggerFactory.getLogger(getClass());
         }
 
         public KnownHostEntry parseEntry(String line)
