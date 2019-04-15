@@ -1,6 +1,6 @@
 # sshj
 
-This repository is a fork of (https://github.com/hierynomus/sshj)[https://github.com/hierynomus/sshj] and introduces a few modifications which are not yet part of the original library:
+This repository is a fork of https://github.com/hierynomus/sshj and introduces a few modifications which are not yet part of the original library:
 
 * https://github.com/hierynomus/sshj/pull/500
 * ...
