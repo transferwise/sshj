@@ -2,38 +2,24 @@ import java.text.SimpleDateFormat
 import com.bmuschko.gradle.docker.tasks.container.*
 import com.bmuschko.gradle.docker.tasks.image.*
 
-plugins {
-  id "java"
-  id "groovy"
-  id "jacoco"
-  id "osgi"
-  id "maven-publish"
-  id 'pl.allegro.tech.build.axion-release' version '1.9.2'
-  id "com.bmuschko.docker-remote-api" version "3.2.1"
-  id "com.github.hierynomus.license" version "0.12.1"
-  id "com.jfrog.bintray" version "1.7"
-  id 'ru.vyarus.java-lib' version '1.0.5'
-  // id 'ru.vyarus.pom' version '1.0.3'
-  id 'ru.vyarus.github-info' version '1.1.0'
-  id 'ru.vyarus.animalsniffer' version '1.4.2'
+buildscript {
+  repositories {
+    maven { url "https://arti.tw.ee/artifactory/libs-release" }
+  }
 }
+
+plugins {
+  id 'java'
+  id 'groovy'
+  id 'net.researchgate.release' version '2.6.0'
+  id "com.bmuschko.docker-remote-api" version "3.2.1"
+}
+
+apply plugin: 'maven'
 
 group = "com.hierynomus"
-
-scmVersion {
-  tag {
-    prefix = 'v'
-    versionSeparator = ''
-  }
-  hooks {
-    pre 'fileUpdate', [file: 'README.adoc', pattern: { v, c -> /:sshj_version: .*/}, replacement: { v, c -> ":sshj_version: $v" }]
-    pre 'commit'
-  }
-}
-
-project.version = scmVersion.version
-
-defaultTasks "build"
+ext.artifactoryUser = "$System.env.ARTIFACTORY_USER"
+ext.artifactoryPassword = "$System.env.ARTIFACTORY_PASSWORD"
 
 repositories {
   mavenCentral()
@@ -41,6 +27,21 @@ repositories {
     url "https://dl.bintray.com/mockito/maven/"
   }
 }
+
+release {
+  failOnUnversionedFiles = false
+  failOnSnapshotDependencies = false
+  failOnUpdateNeeded = false
+  failOnCommitNeeded = false
+  failOnSnapshotDependencies = false
+  tagPrefix = project.name
+  preTagCommitMessage = "[ci skip] pre tag commit: "
+  tagCommitMessage = "[ci skip] creating tag: "
+  newVersionCommitMessage = "[ci skip] new version commit: "
+}
+createReleaseTag.dependsOn uploadArchives
+
+defaultTasks "build"
 
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
@@ -51,8 +52,6 @@ def bouncycastleVersion = "1.60"
 def sshdVersion = "2.1.0"
 
 dependencies {
-  signature 'org.codehaus.mojo.signature:java16:1.1@signature'
-
   compile "org.slf4j:slf4j-api:1.7.7"
   compile "org.bouncycastle:bcprov-jdk15on:$bouncycastleVersion"
   compile "org.bouncycastle:bcpkix-jdk15on:$bouncycastleVersion"
@@ -72,15 +71,6 @@ dependencies {
 
 }
 
-license {
-  header rootProject.file('LICENSE_HEADER')
-  strictCheck true
-  mapping {
-    java = 'SLASHSTAR_STYLE'
-  }
-  excludes(['**/djb/Curve25519.java', '**/sshj/common/Base64.java', '**/org/mindrot/jbcrypt/*.java'])
-}
-
 // This disables the pedantic doclint feature of JDK8
 if (JavaVersion.current().isJava8Compatible()) {
   tasks.withType(Javadoc) {
@@ -94,40 +84,6 @@ task writeSshjVersionProperties {
     project.file("${project.buildDir}/resources/main/sshj.properties").withWriter { w ->
       w.append("sshj.version=${version}")
     }
-  }
-}
-
-jar.dependsOn writeSshjVersionProperties
-jar {
-  manifest {
-    // please see http://bnd.bndtools.org/chapters/390-wrapping.html
-    instruction "Bundle-Description", "SSHv2 library for Java"
-    instruction "Bundle-License", "http://www.apache.org/licenses/LICENSE-2.0.txt"
-    instruction "Import-Package", "!net.schmizz.*"
-    instruction "Import-Package", "!com.hierynomus.sshj.*"
-    instruction "Import-Package", "javax.crypto*"
-    instruction "Import-Package", "!net.i2p.crypto.eddsa.math"
-    instruction "Import-Package", "net.i2p*"
-    instruction "Import-Package", "com.jcraft.jzlib*;version=\"[1.1,2)\";resolution:=optional"
-    instruction "Import-Package", "org.slf4j*;version=\"[1.7,5)\""
-    instruction "Import-Package", "org.bouncycastle*;resolution:=optional"
-    instruction "Import-Package", "org.bouncycastle.jce.provider;resolution:=optional"
-    instruction "Import-Package", "*"
-    instruction "Export-Package", "com.hierynomus.sshj.*;version=\"${project.jar.manifest.version}\""
-    instruction "Export-Package", "net.schmizz.*;version=\"${project.jar.manifest.version}\""
-  }
-}
-
-sourcesJar {
-  manifest {
-    attributes(
-      // Add the needed OSGI attributes
-      "Bundle-ManifestVersion": "2",
-      "Bundle-Name": "${project.jar.manifest.name} Source",
-      "Bundle-Version": project.jar.manifest.version,
-      "Eclipse-SourceBundle": "${project.jar.manifest.symbolicName};version=\"${project.jar.manifest.version}\";roots:=\".\"",
-      "Bundle-SymbolicName": "${project.jar.manifest.symbolicName}.source"
-    )
   }
 }
 
@@ -178,86 +134,6 @@ tasks.withType(Test) {
 
 project.tasks.compileGroovy.onlyIf { false }
 
-github {
-  user 'hierynomus'
-  license 'Apache'
-}
-
-pom {
-  description "SSHv2 library for Java"
-  url "https://github.com/hierynomus/sshj"
-  inceptionYear "2009"
-  developers {
-    developer {
-      id "hierynomus"
-      name "Jeroen van Erp"
-      email "jeroen@javadude.nl"
-      roles {
-        role "Lead developer"
-      }
-    }
-    developer {
-      id "shikhar"
-      name "Shikhar Bhushan"
-      email "shikhar@schmizz.net"
-      url "http://schmizz.net"
-      roles {
-        role "Previous lead developer"
-      }
-    }
-    developer {
-      id "iterate"
-      name "David Kocher"
-      email "dkocher@iterate.ch"
-      organization "iterage GmbH"
-      organizationUrl "https://iterate.ch"
-      roles {
-        role "Developer"
-      }
-    }
-  }
-}
-
-if (project.hasProperty("bintrayUsername") && project.hasProperty("bintrayApiKey")) {
-  bintray {
-    user = project.property("bintrayUsername")
-    key = project.property("bintrayApiKey")
-    publish = true
-    publications = ["maven"]
-    pkg {
-      repo = "maven"
-      name = project.name
-      licenses = ["Apache-2.0"]
-      vcsUrl = "https://github.com/hierynomus/sshj.git"
-      labels = ["ssh", "sftp", "secure-shell", "network", "file-transfer"]
-      githubRepo = "hierynomus/sshj"
-      version {
-        name = "${project.version}"
-        vcsTag = "v${project.version}"
-        released = new SimpleDateFormat('yyyy-MM-dd\'T\'HH:mm:ss.SSSZZ').format(new Date())
-        gpg {
-          sign = true
-          passphrase = project.property("signing.password")
-        }
-        mavenCentralSync {
-          sync = true
-          user = project.property("sonatypeUsername")
-          password = project.property("sonatypePassword")
-          close = 1
-        }
-      }
-    }
-  }
-}
-
-jacocoTestReport {
-    reports {
-        xml.enabled true
-        html.enabled true
-    }
-}
-
-
 task buildItestImage(type: DockerBuildImage) {
     inputDir = file('src/itest/docker-image')
     tag = 'sshj/sshd-itest'
@@ -278,15 +154,18 @@ task stopItestContainer(type: DockerStopContainer) {
     targetContainerId { createItestContainer.getContainerId() }
 }
 
-task forkedUploadRelease(type: GradleBuild) {
-  buildFile = project.buildFile
-  tasks = ["bintrayUpload"]
-}
-
 project.tasks.integrationTest.dependsOn(startItestContainer)
 project.tasks.integrationTest.finalizedBy(stopItestContainer)
 
-project.tasks.release.dependsOn([project.tasks.integrationTest, project.tasks.build])
-project.tasks.release.finalizedBy(project.tasks.forkedUploadRelease)
-project.tasks.jacocoTestReport.dependsOn(project.tasks.test)
-project.tasks.check.dependsOn(project.tasks.jacocoTestReport)
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      snapshotRepository(url: "http://arti.tw.ee/artifactory/libs-snapshot-local") {
+        authentication(userName: artifactoryUser, password: artifactoryPassword)
+      }
+      repository(url: "http://arti.tw.ee/artifactory/libs-release-local") {
+        authentication(userName: artifactoryUser, password: artifactoryPassword)
+      }
+    }
+  }
+}
