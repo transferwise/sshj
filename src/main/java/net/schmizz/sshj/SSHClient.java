@@ -221,7 +221,7 @@ public class SSHClient
         for (AuthMethod method: methods) {
             method.setLoggerFactory(loggerFactory);
             try {
-                if (auth.authenticate(username, (Service) conn, method, trans.getTimeoutMs()))
+                if (auth.authenticate(username, (Service) conn, method, getTimeout()))
                     return;
             } catch (UserAuthException e) {
                 savedEx.push(e);
