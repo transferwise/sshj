@@ -3,7 +3,7 @@
 This repository is a fork of https://github.com/hierynomus/sshj and introduces a few modifications which are not yet part of the original library:
 
 * https://github.com/hierynomus/sshj/pull/500
-* ...
+* Authentication promise timeout to be configurable
 
 ## Branching and versioning
 All changes are part of `master` branch. Versioning starts from `0.0.1` to avoid the possibility of version overlap with the original library.
