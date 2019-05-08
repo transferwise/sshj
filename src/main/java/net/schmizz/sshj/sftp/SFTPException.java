@@ -70,7 +70,7 @@ public class SFTPException
     }
 
     public SFTPException(StatusCode sc, String msg) {
-        this(msg);
+        this(String.format("%s[%s]", msg, sc != null ? sc.toString() : "null"));
         this.sc = sc;
     }
 
