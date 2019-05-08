@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-    - image: docker-local-artifacts.transferwise.com/circle_oracle_jvm8:171
+    - image: arti.tw.ee/circle_oracle_jvm8:171
       user: circleci
     resource_class: medium
     environment:
@@ -36,7 +36,7 @@ jobs:
         - ~/.ssh
   release:
     docker:
-    - image: docker-local-artifacts.transferwise.com/circle_oracle_jvm8:171
+    - image: arti.tw.ee/circle_oracle_jvm8:171
       user: circleci
     resource_class: small
     environment:
