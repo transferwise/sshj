@@ -23,6 +23,8 @@ import net.schmizz.sshj.common.KeyType;
 import net.schmizz.sshj.transport.cipher.*;
 import net.schmizz.sshj.transport.digest.Digest;
 import net.schmizz.sshj.transport.digest.MD5;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -38,6 +40,7 @@ import java.util.Arrays;
  * Represents a PKCS5-encoded key file. This is the format typically used by OpenSSH, OpenSSL, Amazon, etc.
  */
 public class PKCS5KeyFile extends BaseFileKeyProvider {
+    private static final Logger log = LoggerFactory.getLogger(PKCS5KeyFile.class);
 
     public static class Factory
             implements net.schmizz.sshj.common.Factory.Named<FileKeyProvider> {
@@ -98,7 +101,10 @@ public class PKCS5KeyFile extends BaseFileKeyProvider {
                         } else if ("DSS".equals(s)) {
                             type = KeyType.DSA;
                         } else {
-                            throw new FormatException("Unrecognized PKCS5 key type: " + s);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Unrecognized PKCS5 key type: " + s);
+                            }
+                            throw new FormatException("Unrecognized PKCS5 key type");
                         }
                     } else {
                         throw new FormatException("Bad header; possibly PKCS8 format?");
